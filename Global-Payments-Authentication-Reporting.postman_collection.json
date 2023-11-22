@@ -1,0 +1,316 @@
+{
+	"info": {
+		"_postman_id": "b907b6b4-de7c-41cc-bdb6-3a8f94ae1fab",
+		"name": "Global-Payments-Authentication-Reporting",
+		"description": "A brief example of the Global Payments Authentication Search and Obtain Data API. Documents can be found against each API in this collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "2402423"
+	},
+	"item": [
+		{
+			"name": "Authentication Search",
+			"item": [
+				{
+					"name": "POST Authentication Search",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"generatePreReqs()\r",
+									"\r",
+									"async function generatePreReqs(){\r",
+									"\r",
+									"// Calculate and Set Request Timestamp\r",
+									"const request_timestamp = await getFormattedTimestampWithMicroseconds();\r",
+									"postman.setEnvironmentVariable('request_timestamp', request_timestamp);\r",
+									"\r",
+									"// Access the request body\r",
+									"let requestBody = pm.request.body;\r",
+									"let bodyData = JSON.parse(requestBody.raw);\r",
+									"\r",
+									"// Check the parsed body for environment variable references. If the values are Postman variables, this retrieves the values from the environment variable and then updates the object.\r",
+									"checkForEnvVariables(bodyData);\r",
+									"\r",
+									"// Get sharedSecret\r",
+									"const sharedSecret = pm.environment.get('sharedSecret');\r",
+									"\r",
+									"// Destruct required hash variables from Body Object\r",
+									"const {merchant_id, start_timestamp} = bodyData\r",
+									"\r",
+									"const authHash =  await generateHash({\r",
+									"request_timestamp,\r",
+									"merchant_id,\r",
+									"start_timestamp\r",
+									"},sharedSecret)\r",
+									"\r",
+									"postman.setEnvironmentVariable('hash', authHash);\r",
+									"\r",
+									"}\r",
+									"\r",
+									"// Calculate Hash\r",
+									"async function generateHash(obj, sharedSecret) {\r",
+									"    // Extract all values from the object and join them with a period\r",
+									"    const initialString = Object.values(obj).join(\".\");\r",
+									"\r",
+									"    // Create a SHA-1 hash of the initial string\r",
+									"    const hashedString = CryptoJS.SHA1(initialString).toString();\r",
+									"\r",
+									"    // Concatenate with shared secret and hash again\r",
+									"    const concatenatedString = `${hashedString}.${sharedSecret}`;\r",
+									"    const finalHash = CryptoJS.SHA1(concatenatedString).toString();\r",
+									"\r",
+									"    return finalHash\r",
+									"}\r",
+									"\r",
+									"async function getFormattedTimestamp() {\r",
+									"  const date = new Date();\r",
+									"  return (\r",
+									"    date.getFullYear() +\r",
+									"    \"-\" +\r",
+									"    String(date.getMonth() + 1).padStart(2, \"0\") +\r",
+									"    \"-\" +\r",
+									"    String(date.getDate()).padStart(2, \"0\") +\r",
+									"    \"T\" +\r",
+									"    String(date.getHours()).padStart(2, \"0\") +\r",
+									"    \":\" +\r",
+									"    String(date.getMinutes()).padStart(2, \"0\") +\r",
+									"    \":\" +\r",
+									"    String(date.getSeconds()).padStart(2, \"0\") +\r",
+									"    \".\" +\r",
+									"    String(date.getMilliseconds()).padStart(3, \"0\")\r",
+									"  );\r",
+									"}\r",
+									"\r",
+									"async function getFormattedTimestampWithMicroseconds() {\r",
+									"  const reqTimeStamp = await getFormattedTimestamp() + \"000\";\r",
+									"  return reqTimeStamp\r",
+									"}\r",
+									"\r",
+									"async function checkForEnvVariables(obj) {\r",
+									"        for (let key in obj) {\r",
+									"            if (typeof obj[key] === 'string' && obj[key].includes('{{') && obj[key].includes('}}')) {\r",
+									"                let varName = obj[key].replace('{{', '').replace('}}', '');\r",
+									"                let varValue = pm.environment.get(varName);\r",
+									"                // Replace with the actual value if needed\r",
+									"                   obj[key] = varValue;\r",
+									"            } else if (typeof obj[key] === 'object') {\r",
+									"                checkForEnvVariables(obj[key]);\r",
+									"            }\r",
+									"        }\r",
+									"    }"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "securehash {{hash}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"request_timestamp\": \"{{request_timestamp}}\",\r\n  \"merchant_id\": \"{{merchant_id}}\",\r\n  \"account_id\": \"{{account_id}}\",\r\n  \"start_timestamp\": \"2023-11-17T09:15:00.000000\",\r\n  \"end_timestamp\": \"2023-11-17T12:00:00.000000\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.sandbox.globalpay-ecommerce.com/3ds2/authentications/search",
+							"protocol": "https",
+							"host": [
+								"api",
+								"sandbox",
+								"globalpay-ecommerce",
+								"com"
+							],
+							"path": [
+								"3ds2",
+								"authentications",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Using the search endpoint, you can pull a list of authentication records based on a number of criteria.\n\nThis API allows you to test the Global Payments API. You must have the following\n\n- `sharedSecret`: The secret from your Global Payments account. You need to store this in an environment variable.\n- `merchant_id`: The Merchant Id of you Global Payments account. You can store this in an environment variable or hardcode into request body.\n- `account_id`: The Account Id linked to your Merchant Id. You can store this in an environment variable or hardcode into request body.\n- `start_timestamp`: The start of the date range you want to search. You can store this in an environment variable or hardcode into request body.\n- `end_timestamp`: The end of the date range you want to search. You can store this in an environment variable or hardcode into request body.\n- Optionally you can also provide additional search criteria such as:\n    - `server_trans_id`: The Server Transaction Id. You can store this in an environment variable or hardcode into the URL string\n    - More options are available. Visit the Global Payments documentation for further information - [https://developer.globalpay.com/ecommerce/3d-secure-version2/authentication-reporting](https://developer.globalpay.com/ecommerce/3d-secure-version2/authentication-reporting)\n\nWhen calling the API, there is a Postman pre-req script that performs the following\n\n- Calculates the `request_timestamp` and adds it to the environment variable for use at runtime.\n    \n- Retrieves the request body and identifies which keys / value pairs reference environment variables. If any are found it retrieves the values from the environment.\n    \n- Generates a securehash based on the following information\n    \n    - `request_timestamp`\n    - `merchant_id`\n        \n    - `start_timestamp`"
+		},
+		{
+			"name": "Obtain Authentication Data",
+			"item": [
+				{
+					"name": "GET Obtain Authentication Data",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"generatePreReqs()\r",
+									"\r",
+									"async function generatePreReqs(){\r",
+									"\r",
+									"// Calculate and Set Request Timestamp\r",
+									"const request_timestamp = await getFormattedTimestampWithMicroseconds();\r",
+									"postman.setEnvironmentVariable('request_timestamp', request_timestamp);\r",
+									"\r",
+									"// Access Query String Parameters\r",
+									"let merchant_id = pm.request.url.query.get('merchant_id');\r",
+									"\r",
+									"// check if merchant_id has been specified as an environment variable and get value\r",
+									"\r",
+									" if (merchant_id.includes('{{') && merchant_id.includes('}}')) \r",
+									" {\r",
+									"    let varName = merchant_id.replace('{{', '').replace('}}', '');\r",
+									"    let varValue = pm.environment.get(varName);\r",
+									"    merchant_id = varValue;\r",
+									" }\r",
+									"\r",
+									"// Get the server trans id\r",
+									"let url = pm.request.url.toString();\r",
+									"\r",
+									"// Parse the URL to get the path segments\r",
+									"let pathSegments = new URL(url).pathname.split('/');\r",
+									"\r",
+									"// The 'server_trans_id' is expected to be after the 'authentications' segment\r",
+									"// Assuming the structure: /3ds/authentications/{server_trans_id}\r",
+									"let serverTransIdIndex = pathSegments.indexOf('authentications') + 1;\r",
+									"let server_trans_id = pathSegments[serverTransIdIndex];\r",
+									"\r",
+									"// check if server_trans_id has been specified as an environment variable and get value\r",
+									"\r",
+									" if (server_trans_id.includes('{{') && server_trans_id.includes('}}')) \r",
+									" {\r",
+									"    let varName = server_trans_id.replace('{{', '').replace('}}', '');\r",
+									"    let varValue = pm.environment.get(varName);\r",
+									"    server_trans_id = varValue;\r",
+									" }\r",
+									"\r",
+									"// Get sharedSecret\r",
+									"const sharedSecret = pm.environment.get('sharedSecret');\r",
+									"\r",
+									"const {finalHash,initialString}  =  await generateHash({\r",
+									"request_timestamp,\r",
+									"merchant_id,\r",
+									"server_trans_id\r",
+									"},sharedSecret)\r",
+									"\r",
+									"postman.setEnvironmentVariable('hash', finalHash);\r",
+									"postman.setEnvironmentVariable('initialString', initialString);\r",
+									"\r",
+									"}\r",
+									"\r",
+									"// Calculate Hash\r",
+									"async function generateHash(obj, sharedSecret) {\r",
+									"    // Extract all values from the object and join them with a period\r",
+									"    const initialString = Object.values(obj).join(\".\");\r",
+									"\r",
+									"    // Create a SHA-1 hash of the initial string\r",
+									"    const hashedString = CryptoJS.SHA1(initialString).toString();\r",
+									"\r",
+									"    // Concatenate with shared secret and hash again\r",
+									"    const concatenatedString = `${hashedString}.${sharedSecret}`;\r",
+									"    const finalHash = CryptoJS.SHA1(concatenatedString).toString();\r",
+									"\r",
+									"    return {\r",
+									"        finalHash,\r",
+									"        initialString\r",
+									"    }\r",
+									"}\r",
+									"\r",
+									"async function getFormattedTimestamp() {\r",
+									"  const date = new Date();\r",
+									"  return (\r",
+									"    date.getFullYear() +\r",
+									"    \"-\" +\r",
+									"    String(date.getMonth() + 1).padStart(2, \"0\") +\r",
+									"    \"-\" +\r",
+									"    String(date.getDate()).padStart(2, \"0\") +\r",
+									"    \"T\" +\r",
+									"    String(date.getHours()).padStart(2, \"0\") +\r",
+									"    \":\" +\r",
+									"    String(date.getMinutes()).padStart(2, \"0\") +\r",
+									"    \":\" +\r",
+									"    String(date.getSeconds()).padStart(2, \"0\") +\r",
+									"    \".\" +\r",
+									"    String(date.getMilliseconds()).padStart(3, \"0\")\r",
+									"  );\r",
+									"}\r",
+									"\r",
+									"async function getFormattedTimestampWithMicroseconds() {\r",
+									"  const reqTimeStamp = await getFormattedTimestamp() + \"000\";\r",
+									"  return reqTimeStamp\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "securehash {{hash}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.sandbox.globalpay-ecommerce.com/3ds/authentications/{{server_trans_id}}?merchant_id={{merchant_id}}&request_timestamp={{request_timestamp}}",
+							"protocol": "https",
+							"host": [
+								"api",
+								"sandbox",
+								"globalpay-ecommerce",
+								"com"
+							],
+							"path": [
+								"3ds",
+								"authentications",
+								"{{server_trans_id}}"
+							],
+							"query": [
+								{
+									"key": "merchant_id",
+									"value": "{{merchant_id}}"
+								},
+								{
+									"key": "request_timestamp",
+									"value": "{{request_timestamp}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Using the Server Transaction ID, you can now request the detailed authentication data that the Issuer has returned to Global Payments.\n\nThis API allows you to test the Global Payments API. You must have the following\n\n- `sharedSecret`: The secret from your Global Payments account. You need to store this in an environment variable.\n    \n- `server_trans_id`: The Server Transaction Id. You can store this in an environment variable or hardcode into the URL string\n- `merchant_id`: The Merchant Id of you Global Payments account. You can store this in an environment variable or hardcode into the URL string\n    \n\nWhen calling the API, there is a Postman pre-req script that performs the following\n\n- Calculates the `request_timestamp` and adds it to the environment variable for use at runtime\n- Retrieves the `server_trans_id` from the URL and identifies if it is an environment variable. If so it retrieves the variable value\n- Retrieves the `merchant_id` from the URL query string parameters and identifies if it is an environment variable. If so, it retrieves the variable value.\n- Generates a securehash based on the following information\n    - `request_timestamp`\n    - `merchant_id`\n    - `server_trans_id`\n\nFor further information, visit the Global Payments documentation here\n\n[https://developer.globalpay.com/ecommerce/3d-secure-version2/authentication-reporting](https://developer.globalpay.com/ecommerce/3d-secure-version2/authentication-reporting)"
+		}
+	]
+}
