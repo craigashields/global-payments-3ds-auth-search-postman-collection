@@ -48,3 +48,30 @@ Further information can be found on the Global Payments docs site
 The repo provides a Postman Collection and environment that can be imported into Postman.
 
 ## Installation
+
+To download and set up the collection, follow these steps:
+
+1. Select Code -> Download Zip
+
+2. Unzip the folder and you will see 2 `json` files
+
+   - `Global-Payments-Authentication-Reporting.postman_collection.json`
+
+     This file contains the API collection and documentation
+
+   - `Global-Payments-Authentication-Reporting.postman_environment.json`
+
+     This file contains the environment variables
+
+3. Import into Postman
+
+   To import into Postman, select the `import` button in the top left. A dialog will open where
+   you can drag and drop the files.
+
+   Once the files have been imported, you will be able to find the environment config in the Environments section
+   and the API collection in the Collections section.
+
+## Usage
+
+1. Start by setting the environment variables and making the environment active.
+2. Open the collection and run the APIs. The documentation for the APIs can be found against the corresponding sub folder.
